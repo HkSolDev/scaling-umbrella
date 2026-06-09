@@ -1,6 +1,6 @@
 use crate::errors::ErrorCode;
 use crate::state::VaultState;
-use anchor_lang::{prelude::*, solana_program::program_option::COption};
+use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
     self, Mint, MintTo, TokenAccount, TokenInterface, TransferChecked,
 };

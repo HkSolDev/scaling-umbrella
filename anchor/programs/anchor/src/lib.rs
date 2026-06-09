@@ -1,12 +1,13 @@
 use anchor_lang::prelude::*;
 
+// pub mod const;
 pub mod errors;
 pub use errors::*;
 pub mod state;
 pub use state::*;
 pub mod instructions;
 pub use instructions::*;
-declare_id!("6oqbRnG1sdguLXVqYPMp77LR5SQAEchbdvDKN6KDF5pR");
+declare_id!("5NMv2idtCXsT6GUuXfDnKpQ2y2f26Mt4W7mvvcXeK1GP");
 
 #[program]
 pub mod anchor {
@@ -47,45 +48,29 @@ pub mod anchor {
     /// Creates a new sports prediction market for a specific match from TxLINE.
     pub fn create_market(
         ctx: Context<CreateMarket>,
-        match_id: u16,
-        que: String,
-        initial_odds_home: u32, // Odds in basis points (e.g. 200 = 2.00x)
-        initial_odds_away: u32,
-        initial_odds_draw: u32,
+        question: String,
+        market_id: u16,
     ) -> Result<()> {
-        // TODO: Initialize the Market account details, status, and starting odds
-        msg!("Market created for match: {}", match_id);
+        msg!("Market created for match: {}", market_id);
         let bump = ctx.bumps.market_state;
-        ctx.accounts.handle_createMarket(
-            que, match_id,
-            bump, // initial_odds_home,
-                 // initial_odds_away,
-                 // initial_odds_draw,
-        )?;
+        ctx.accounts
+            .handle_createMarket(question, market_id, bump)?;
         Ok(())
     }
 
-    // --- STEP 3: Leveraged Betting Instructions ---
+    // --- STEP 3: Betting Instructions ---
 
-    /// Places a leveraged bet on a match outcome.
-    /// User provides margin; the program borrows the remaining position size from the LP Vault.
-    pub fn place_leveraged_bet(
-        ctx: Context<PlaceLeveragedBet>,
-        outcome: u8,        // 0: Home, 1: Away, 2: Draw
-        margin_amount: u64, // Amount of user's own funds
-        leverage: u8,       // e.g. 2 for 2x, 3 for 3x
+    /// Places a prediction bet on a match outcome.
+    /// User pays collateral (e.g. USDC) directly to the prediction market escrow.
+    pub fn place_bet(
+        ctx: Context<PlaceBet>,
+        outcome: u8, // 0: Home, 1: Away, 2: Draw
+        amount: u64, // Amount of user's bet
     ) -> Result<()> {
-        // TODO: Validate that the leverage multiplier is within bounds (e.g. 2x to 5x)
-        // TODO: Calculate borrow amount = margin * (leverage - 1)
-        // TODO: Verify vault has sufficient free liquidity
-        // TODO: Transfer user margin to vault/escrow and lock the leverage loan
-        // TODO: Create a Position account tracking the leveraged bet
-        msg!(
-            "Leveraged bet placed. Outcome: {}, Margin: {}, Leverage: {}x",
-            outcome,
-            margin_amount,
-            leverage
-        );
+        // TODO: Validate that the outcome choice is valid (0, 1, or 2)
+        // TODO: Transfer bet amount from user's wallet to the market escrow
+        // TODO: Create a Position account tracking the user's bet
+        msg!("Bet placed. Outcome: {}, Amount: {}", outcome, amount);
         Ok(())
     }
 
@@ -98,8 +83,7 @@ pub mod anchor {
     ) -> Result<()> {
         // TODO: Execute validation CPI (simulate or CPI into TxLINE's validate_stat program)
         // TODO: Distribute payouts to winning traders
-        // TODO: Return borrowed principal + interest/fees back to the LP Vault
-        // TODO: Collect lost margin from losing traders and deposit it into the LP Vault
+        // TODO: Collect lost stakes and deposit a portion back to the LP Vault
         msg!("Market settled. Winner outcome: {}", winning_outcome);
         Ok(())
     }
@@ -111,19 +95,8 @@ pub mod anchor {
 pub struct VaultState {
     pub authority: Pubkey,
     pub total_liquidity: u64, // Total funds deposited by LPs
-    pub active_loans: u64,    // Funds currently locked in leveraged bets
+    pub active_loans: u64,    // Unused in non-leverage MVP (kept for compatibility or remove)
     pub lp_token_supply: u64, // Virtual or real LP token supply tracker
-    pub bump: u8,
-}
-
-#[account]
-pub struct MarketState {
-    pub match_id: String,
-    pub odds_home: u32,
-    pub odds_away: u32,
-    pub odds_draw: u32,
-    pub is_resolved: bool,
-    pub winning_outcome: u8,
     pub bump: u8,
 }
 
@@ -132,8 +105,7 @@ pub struct PositionState {
     pub user: Pubkey,
     pub match_id: String,
     pub outcome: u8,
-    pub margin_amount: u64,
-    pub borrowed_amount: u64,
+    pub amount: u64,
     pub entry_odds: u32,
     pub is_settled: bool,
     pub bump: u8,
@@ -149,10 +121,10 @@ pub struct WithdrawLp<'info> {
 }
 
 #[derive(Accounts)]
-pub struct PlaceLeveragedBet<'info> {
+pub struct PlaceBet<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
-    // TODO: Define accounts for VaultState, MarketState, PositionState, etc.
+    // TODO: Define accounts for MarketState, PositionState, etc.
 }
 
 #[derive(Accounts)]

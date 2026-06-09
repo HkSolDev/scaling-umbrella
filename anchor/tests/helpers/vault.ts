@@ -7,6 +7,14 @@ import { vaultPda, collateralMintPda, lpMintPda } from "./pdas";
 import { Keypair } from "@solana/web3.js";
 import { getMint } from "@solana/spl-token";
 
+export async function ensureVault(admin: Keypair) {
+  try {
+    await program.account.vaultState.fetch(vaultPda());
+  } catch {
+    await initializeVault(admin);
+  }
+}
+
 export async function initializeVault(admin: Keypair) {
   const sig = await program.methods
     .initializeVault()
@@ -15,9 +23,10 @@ export async function initializeVault(admin: Keypair) {
     .rpc();
   await connection.confirmTransaction(sig);
 
+  const vault = vaultPda();
   const vaultCollateralTokenAccount = getAssociatedTokenAddressSync(
     collateralMintPda(),
-    vaultPda(admin),
+    vault,
     true
   );
 
@@ -25,7 +34,7 @@ export async function initializeVault(admin: Keypair) {
   const collateralMintAccount = await getMint(connection, collateralMintPda());
   const lpMintAccount = await getMint(connection, lpMintPda());
   return {
-    vault: vaultPda(admin),
+    vault,
     vaultCollateralTokenAccount,
     collateralMint: collateralMintAccount,
     lpMint: lpMintAccount,

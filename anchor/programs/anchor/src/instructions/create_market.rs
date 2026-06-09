@@ -1,4 +1,3 @@
-use crate::errors::ErrorCode;
 use crate::state::MarketState;
 use anchor_lang::prelude::*;
 use anchor_spl::{
@@ -6,7 +5,8 @@ use anchor_spl::{
     token_interface::{self, Mint, TokenAccount, TokenInterface},
 };
 
-pub const USDC_DEVNET: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+// Re-enable on devnet deploy — local/offline tests use vault collateral_mint PDA instead.
+// pub const USDC_DEVNET: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
 #[derive(Accounts)]
 #[instruction(question: String, market_id: u16)]
@@ -18,13 +18,14 @@ pub struct CreateMarket<'info> {
     #[account(init,
         payer = admin,
         space = 8 + MarketState::INIT_SPACE,
-        seeds = [b"create_market", admin.key().as_ref(), question.as_bytes(), &market_id.to_le_bytes()],
+        // question is stored in account data — not in seeds (Solana max 32 bytes per seed)
+        seeds = [b"create_market", admin.key().as_ref(), &market_id.to_le_bytes()],
         bump)]
     pub market_state: Account<'info, MarketState>,
     // The mint for the Prediction use for the payment token
-    #[account(
-        constraint = prediction_mint.key() == USDC_DEVNET @ ErrorCode::InvalidPredictionMint,
-    )]
+    // #[account(
+    //     constraint = prediction_mint.key() == USDC_DEVNET @ ErrorCode::InvalidPredictionMint,
+    // )]
     pub prediction_mint: InterfaceAccount<'info, Mint>,
     // The associated token account for the prediction mint
     #[account(init,
@@ -41,6 +42,12 @@ pub struct CreateMarket<'info> {
 
 impl<'info> CreateMarket<'info> {
     pub fn handle_createMarket(&mut self, question: String, marketId: u16, bump: u8) -> Result<()> {
+        msg!(
+            "create_market: admin={}, market_id={}, mint={}",
+            self.admin.key(),
+            marketId,
+            self.prediction_mint.key()
+        );
         self.market_state.admin = *self.admin.key;
         self.market_state.bump = bump;
         self.market_state.question = question;

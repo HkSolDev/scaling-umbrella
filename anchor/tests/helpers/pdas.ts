@@ -8,11 +8,16 @@ export const SEEDS = {
   lpMint: "lp_mint",
 } as const;
 
+// Uncomment when deploying/testing on devnet with real USDC:
+// export const USDC_DEVNET = new PublicKey(
+//   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+// );
+
 function getPda(seed: string): PublicKey {
   return PublicKey.findProgramAddressSync([Buffer.from(seed)], programId)[0];
 }
 
-export function vaultPda(admin: Keypair): PublicKey {
+export function vaultPda(): PublicKey {
   return PublicKey.findProgramAddressSync(
     [Buffer.from(SEEDS.vault)],
     programId
@@ -25,4 +30,19 @@ export function collateralMintPda(): PublicKey {
 
 export function lpMintPda(): PublicKey {
   return getPda(SEEDS.lpMint);
+}
+
+// Rust: [b"create_market", admin, market_id.to_le_bytes()] — question lives in MarketState only
+export function createMarketPda(admin: Keypair, marketId: number): PublicKey {
+  const marketIdLe = Buffer.alloc(2);
+  marketIdLe.writeUInt16LE(marketId);
+
+  return PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("create_market"),
+      admin.publicKey.toBuffer(),
+      marketIdLe,
+    ],
+    programId
+  )[0];
 }
