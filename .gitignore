@@ -1,0 +1,22 @@
+# Dependency directories
+node_modules/
+/anchor/node_modules/
+/web/node_modules/
+
+# Build outputs
+/anchor/target/
+/web/.next/
+/web/out/
+/anchor/.anchor/
+
+# IDE and local configurations
+.idea/
+.vscode/
+.DS_Store
+*.log
+.env
+.env.*
+.env.local
+.next/
+dist/
+build/
