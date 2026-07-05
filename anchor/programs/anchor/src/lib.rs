@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
 
+pub mod errors;
+pub use errors::*;
 pub mod state;
 pub use state::*;
 pub mod instructions;
@@ -22,10 +24,12 @@ pub mod anchor {
     }
 
     /// LPs deposit collateral (e.g. SOL or USDC) into the vault.
-    pub fn deposit_lp(ctx: Context<DepositLp>, amount: u64) -> Result<()> {
+    pub fn deposit_lp(ctx: Context<DepositLP>, amount: u64) -> Result<()> {
         // TODO: Transfer funds from depositor to the vault account
         // TODO: Mint LP share tokens or update internal ledger
+
         msg!("Deposited LP: {}", amount);
+        ctx.accounts.handle_deposit_lp(amount)?;
         Ok(())
     }
 
@@ -128,13 +132,6 @@ pub struct PositionState {
 }
 
 // --- CONTEXT DEFINITIONS (TODO: Fill in Anchor macros/constraints) ---
-
-#[derive(Accounts)]
-pub struct DepositLp<'info> {
-    #[account(mut)]
-    pub signer: Signer<'info>,
-    // TODO: Define accounts for LP vault and depositor token/SOL accounts
-}
 
 #[derive(Accounts)]
 pub struct WithdrawLp<'info> {
