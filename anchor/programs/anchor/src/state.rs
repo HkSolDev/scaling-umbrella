@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+// One vault for the whole program, which will be used to manage LP deposits and leveraged bets. The vault will hold the total liquidity, active loans, and track LP token supply.
 #[derive(InitSpace)]
 #[account]
 pub struct VaultState {

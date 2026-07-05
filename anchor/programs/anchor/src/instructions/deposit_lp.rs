@@ -1,9 +1,8 @@
 use crate::errors::ErrorCode;
 use crate::state::VaultState;
 use anchor_lang::{prelude::*, solana_program::program_option::COption};
-use anchor_spl::{
-    associated_token::AssociatedToken,
-    token_interface::{self, Mint, MintTo, TokenAccount, TokenInterface, TransferChecked},
+use anchor_spl::token_interface::{
+    self, Mint, MintTo, TokenAccount, TokenInterface, TransferChecked,
 };
 
 #[derive(Accounts)]

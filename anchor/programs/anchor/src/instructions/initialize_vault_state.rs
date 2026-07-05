@@ -23,7 +23,7 @@ seeds= [b"global_state", signer.key().as_ref()], bump
         payer = signer,
               mint::decimals = 6,
               mint::authority = vault_state,
-            seeds = [b"colletral_mint"], bump,
+            seeds = [b"collateral_mint"], bump,
     )]
     pub mint: InterfaceAccount<'info, Mint>,
 
