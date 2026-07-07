@@ -24,5 +24,7 @@ pub enum ErrorCode {
     #[msg("Invalid prediction mint")]
     InvalidPredictionMint,
     #[msg("Invalid prediction LP mint")]
-    InvalidPredictionLPMint,
+    InvalidMarketPositionMint,
+    #[msg("Invalid outcome")]
+    InvalidOutcome,
 }

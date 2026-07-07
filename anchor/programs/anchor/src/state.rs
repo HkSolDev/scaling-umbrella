@@ -20,8 +20,25 @@ pub struct MarketState {
     pub market_id: u16,
     pub prediction_mint: Pubkey,
     pub prediction_vault: Pubkey,
+    pub market_position_mint: Pubkey,
+    pub total_liquidity: u64,
+    pub total_lp_tokens: u64,
     pub total_bets: u64,
     pub resolved: bool,
     pub winner: u8,
+    pub bump: u8,
+}
+
+#[derive(InitSpace)]
+#[account]
+pub struct PositionState {
+    pub bet_id: u16,
+    pub entry_odds_scaled: u64,
+    pub user: Pubkey,
+    pub match_id: u16,
+    pub outcome: u8,
+    pub amount: u64,
+    pub entry_odds: u64,
+    pub is_settled: bool,
     pub bump: u8,
 }

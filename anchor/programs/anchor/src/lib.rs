@@ -62,15 +62,23 @@ pub mod anchor {
 
     /// Places a prediction bet on a match outcome.
     /// User pays collateral (e.g. USDC) directly to the prediction market escrow.
+
     pub fn place_bet(
         ctx: Context<PlaceBet>,
-        outcome: u8, // 0: Home, 1: Away, 2: Draw
-        amount: u64, // Amount of user's bet
+        entry_odds_scaled: u64,
+        bet_id: u16,
+        outcome: u8,
+        amount: u64,
     ) -> Result<()> {
-        // TODO: Validate that the outcome choice is valid (0, 1, or 2)
-        // TODO: Transfer bet amount from user's wallet to the market escrow
-        // TODO: Create a Position account tracking the user's bet
-        msg!("Bet placed. Outcome: {}, Amount: {}", outcome, amount);
+        let market_position_mint_bump = ctx.bumps.market_position_mint;
+
+        ctx.accounts.handle_place_bet(
+            entry_odds_scaled,
+            bet_id,
+            outcome,
+            amount,
+            market_position_mint_bump,
+        )?;
         Ok(())
     }
 
@@ -100,17 +108,6 @@ pub struct VaultState {
     pub bump: u8,
 }
 
-#[account]
-pub struct PositionState {
-    pub user: Pubkey,
-    pub match_id: String,
-    pub outcome: u8,
-    pub amount: u64,
-    pub entry_odds: u32,
-    pub is_settled: bool,
-    pub bump: u8,
-}
-
 // --- CONTEXT DEFINITIONS (TODO: Fill in Anchor macros/constraints) ---
 
 #[derive(Accounts)]
@@ -118,13 +115,6 @@ pub struct WithdrawLp<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     // TODO: Define accounts to process withdrawal and transfer back to LP
-}
-
-#[derive(Accounts)]
-pub struct PlaceBet<'info> {
-    #[account(mut)]
-    pub signer: Signer<'info>,
-    // TODO: Define accounts for MarketState, PositionState, etc.
 }
 
 #[derive(Accounts)]

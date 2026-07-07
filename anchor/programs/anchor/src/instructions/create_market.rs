@@ -41,10 +41,10 @@ pub struct CreateMarket<'info> {
         payer = admin,
         mint::decimals = 6,
         mint::authority = market_state,
-      seeds = [b"prediction_lp_mint", market_state.key().as_ref()],
+      seeds = [b"market_position_mint", market_state.key().as_ref()],
         bump
     )]
-    pub prediction_lp_mint: InterfaceAccount<'info, Mint>,
+    pub market_position_mint: InterfaceAccount<'info, Mint>,
 
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
@@ -65,6 +65,9 @@ impl<'info> CreateMarket<'info> {
         self.market_state.prediction_mint = self.prediction_mint.key();
         self.market_state.prediction_vault = self.prediction_token_vault.key();
         self.market_state.market_id = marketId;
+        self.market_state.market_position_mint = self.market_position_mint.key();
+        self.market_state.total_liquidity = 0;
+        self.market_state.total_lp_tokens = 0;
         self.market_state.total_bets = 0;
         self.market_state.resolved = false;
         self.market_state.winner = 0;
