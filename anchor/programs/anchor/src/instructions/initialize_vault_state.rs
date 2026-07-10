@@ -12,8 +12,9 @@ pub struct InitializeVault<'info> {
 
     #[account(init,
 payer = signer,
-space = 8 + VaultState::INIT_SPACE,
-seeds= [b"global_state", signer.key().as_ref()], bump
+        space = 8 + VaultState::INIT_SPACE,
+        seeds = [b"global_state"],
+        bump,
     )]
     pub vault_state: Account<'info, VaultState>,
 

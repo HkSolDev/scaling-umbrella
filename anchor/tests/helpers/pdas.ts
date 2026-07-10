@@ -14,7 +14,7 @@ function getPda(seed: string): PublicKey {
 
 export function vaultPda(admin: Keypair): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from(SEEDS.vault), admin.publicKey.toBytes()],
+    [Buffer.from(SEEDS.vault)],
     programId
   )[0];
 }
