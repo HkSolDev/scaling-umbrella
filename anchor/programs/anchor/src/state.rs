@@ -10,3 +10,18 @@ pub struct VaultState {
     pub lp_token_supply: u64, // Virtual or real LP token supply tracker
     pub bump: u8,
 }
+
+#[derive(InitSpace)]
+#[account]
+pub struct MarketState {
+    pub admin: Pubkey,
+    #[max_len(256)]
+    pub question: String,
+    pub market_id: u16,
+    pub prediction_mint: Pubkey,
+    pub prediction_vault: Pubkey,
+    pub total_bets: u64,
+    pub resolved: bool,
+    pub winner: u8,
+    pub bump: u8,
+}

@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::spl_token_metadata_interface::borsh::schema::SchemaMaxSerializedSizeError::Overflow;
 
 #[error_code]
 pub enum ErrorCode {
@@ -20,4 +19,8 @@ pub enum ErrorCode {
     DecreaseLiquidityError,
     #[msg("Error in minting LP tokens")]
     MintLpTokenError,
+    #[msg("Admin signature does not match")]
+    AdminMismatch,
+    #[msg("Invalid prediction mint")]
+    InvalidPredictionMint,
 }

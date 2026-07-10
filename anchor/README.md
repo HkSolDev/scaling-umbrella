@@ -29,6 +29,43 @@ RPC listens on `http://127.0.0.1:8899`.
 
 Do **not** pass `--no-deploy` unless you plan to deploy manually with `anchor deploy`.
 
+### Devnet fork (real USDC + devnet accounts)
+
+Use this when markets or tests need **devnet USDC** or other devnet state (lazy-cloned on first access):
+
+```bash
+cd anchor
+anchor build
+surfpool start --network devnet --legacy-anchor-compatibility --no-tui --watch
+```
+
+| Mode | Command | USDC mint available? |
+|------|---------|-------------------|
+| Offline local | `--offline` | No — use program `collateral_mint` PDA in tests |
+| Devnet fork | `--network devnet` | Yes — `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
+| Custom RPC | `--rpc-url https://your-devnet-rpc.com` | Yes — better rate limits |
+
+Devnet fork still runs locally on `:8899`; your program deploys to Surfnet, while existing devnet accounts (USDC, Token program, etc.) are fetched when needed.
+
+**Client / test — pass USDC as `predictionMint`:**
+
+```typescript
+import { PublicKey } from "@solana/web3.js";
+
+export const USDC_DEVNET = new PublicKey(
+  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+);
+
+await program.methods.createMarket(/* ... */)
+  .accounts({
+    predictionMint: USDC_DEVNET,
+    // ...
+  })
+  .rpc();
+```
+
+For **offline** Surfpool, use your vault collateral mint instead — do not comment out mint checks; pass a different pubkey per environment.
+
 ### Terminal 2 — run tests
 
 ```bash

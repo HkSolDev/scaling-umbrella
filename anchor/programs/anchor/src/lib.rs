@@ -47,13 +47,21 @@ pub mod anchor {
     /// Creates a new sports prediction market for a specific match from TxLINE.
     pub fn create_market(
         ctx: Context<CreateMarket>,
-        match_id: String,
+        match_id: u16,
+        que: String,
         initial_odds_home: u32, // Odds in basis points (e.g. 200 = 2.00x)
         initial_odds_away: u32,
         initial_odds_draw: u32,
     ) -> Result<()> {
         // TODO: Initialize the Market account details, status, and starting odds
         msg!("Market created for match: {}", match_id);
+        let bump = ctx.bumps.market_state;
+        ctx.accounts.handle_createMarket(
+            que, match_id,
+            bump, // initial_odds_home,
+                 // initial_odds_away,
+                 // initial_odds_draw,
+        )?;
         Ok(())
     }
 
@@ -138,13 +146,6 @@ pub struct WithdrawLp<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     // TODO: Define accounts to process withdrawal and transfer back to LP
-}
-
-#[derive(Accounts)]
-pub struct CreateMarket<'info> {
-    #[account(mut)]
-    pub signer: Signer<'info>,
-    // TODO: Define PDA for MarketState
 }
 
 #[derive(Accounts)]
