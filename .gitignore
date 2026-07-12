@@ -9,6 +9,12 @@ node_modules/
 /web/out/
 /anchor/.anchor/
 
+# Local agent / learning notes (not for GitHub)
+AGENTS.md
+web/AGENTS.md
+LEARNING_LOG.md
+INSTRUCTIONS.md
+settings.json
 # IDE and local configurations
 .idea/
 .vscode/

@@ -35,8 +35,19 @@ pub struct CreateMarket<'info> {
         associated_token::token_program = token_program,
     )]
     pub prediction_token_vault: InterfaceAccount<'info, TokenAccount>,
-    pub system_program: Program<'info, System>,
+
+    // This is the mint for the LP token that will be used to represent shares in the market. Its
+    #[account(init,
+        payer = admin,
+        mint::decimals = 6,
+        mint::authority = market_state,
+      seeds = [b"prediction_lp_mint", market_state.key().as_ref()],
+        bump
+    )]
+    pub prediction_lp_mint: InterfaceAccount<'info, Mint>,
+
     pub token_program: Interface<'info, TokenInterface>,
+    pub system_program: Program<'info, System>,
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 

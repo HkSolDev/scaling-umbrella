@@ -1,8 +1,63 @@
 {
+  "languages": {
+    "TypeScript": {
+      "language_servers": ["vtsls", "!typescript-language-server", "..."]
+    },
+    "TSX": {
+      "language_servers": ["vtsls", "!typescript-language-server", "..."]
+    },
+    "JavaScript": {
+      "language_servers": ["vtsls", "!typescript-language-server", "..."]
+    }
+  },
   "lsp": {
     "rust-analyzer": {
       "initialization_options": {
-        "linkedProjects": ["./anchor/Cargo.toml"]
+        "linkedProjects": ["./anchor/Cargo.toml"],
+        "procMacro": {
+          "enable": true
+        },
+        "completion": {
+          "autoimport": {
+            "enable": true
+          },
+          "autoself": {
+            "enable": true
+          }
+        },
+        "imports": {
+          "granularity": {
+            "group": "module"
+          }
+        },
+        "assist": {
+          "expressionFillDefault": "default"
+        },
+        "check": {
+          "command": "clippy"
+        },
+        "inlayHints": {
+          "maxLength": null
+        }
+      }
+    },
+    "vtsls": {
+      "initialization_options": {
+        "typescript": {
+          "suggest": {
+            "autoImports": true,
+            "completeFunctionCalls": true
+          },
+          "preferences": {
+            "includeCompletionsForImportStatements": true,
+            "includeCompletionsWithInsertText": true
+          }
+        },
+        "javascript": {
+          "suggest": {
+            "autoImports": true
+          }
+        }
       }
     }
   }

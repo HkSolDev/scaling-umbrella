@@ -23,4 +23,6 @@ pub enum ErrorCode {
     AdminMismatch,
     #[msg("Invalid prediction mint")]
     InvalidPredictionMint,
+    #[msg("Invalid prediction LP mint")]
+    InvalidPredictionLPMint,
 }
