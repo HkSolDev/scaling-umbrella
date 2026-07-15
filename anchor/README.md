@@ -2,6 +2,49 @@
 
 Local development and testing use [Surfpool](https://docs.surfpool.run/) instead of `solana-test-validator` for faster startup and hot-reload.
 
+## Current MVP
+
+The current MVP is a pool-based prediction market:
+
+- The protocol admin creates a market.
+- Users can place multiple bets on Home, Away, or Draw.
+- Each bet is stored in a unique `PositionState` PDA derived from `bet_id`, user, and market.
+- The market tracks `total_liquidity`, `home_pool`, `away_pool`, and `draw_pool`.
+- TxLINE oracle settlement, leveraged betting, market LP tokens, and withdrawals are not part of the current MVP.
+
+When a bet is placed, tokens move into the market vault and the selected outcome pool increases. The live outcome percentage is calculated from the current pools:
+
+```text
+outcome percentage = outcome pool / total pool * 100
+```
+
+After the market closes, winning positions can be paid proportionally:
+
+```text
+payout = user bet / winning pool * total pool
+```
+
+The displayed percentage and payout are estimates until betting closes.
+
+## On-chain account flow
+
+```text
+initialize_vault
+    ↓
+create_market
+    ↓
+place_bet
+    ├── transfer user tokens → market prediction vault
+    ├── increase total and selected outcome pools
+    └── create PositionState
+    ↓
+settle_market (planned)
+    ↓
+claim payout (planned)
+```
+
+The program uses checked arithmetic, Anchor account constraints, PDA validation, and `transfer_checked` for token transfers.
+
 ## Prerequisites
 
 - [Anchor](https://www.anchor-lang.com/) CLI
@@ -132,7 +175,9 @@ anchor test --skip-local-validator --skip-build
 
 ```
 tests/
-  initialize.ts      # instruction tests (matched by Anchor.toml glob)
+  00-initialize.ts   # vault initialization test
+  01-createMarket.ts # market creation test
+  03-placebet.ts     # place-bet test
   helpers/             # shared setup — not run as test files
     provider.ts
     pdas.ts
