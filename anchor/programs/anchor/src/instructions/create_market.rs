@@ -19,7 +19,7 @@ pub struct CreateMarket<'info> {
         payer = admin,
         space = 8 + MarketState::INIT_SPACE,
         // question is stored in account data — not in seeds (Solana max 32 bytes per seed)
-        seeds = [b"create_market", admin.key().as_ref(), &market_id.to_le_bytes()],
+        seeds = [b"create_market", admin.key().as_ref(), &market_id.to_be_bytes()],
         bump)]
     pub market_state: Account<'info, MarketState>,
     // The mint for the Prediction use for the payment token
@@ -35,16 +35,6 @@ pub struct CreateMarket<'info> {
         associated_token::token_program = token_program,
     )]
     pub prediction_token_vault: InterfaceAccount<'info, TokenAccount>,
-
-    // This is the mint for the LP token that will be used to represent shares in the market. Its
-    #[account(init,
-        payer = admin,
-        mint::decimals = 6,
-        mint::authority = market_state,
-      seeds = [b"market_position_mint", market_state.key().as_ref()],
-        bump
-    )]
-    pub market_position_mint: InterfaceAccount<'info, Mint>,
 
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
@@ -65,9 +55,8 @@ impl<'info> CreateMarket<'info> {
         self.market_state.prediction_mint = self.prediction_mint.key();
         self.market_state.prediction_vault = self.prediction_token_vault.key();
         self.market_state.market_id = marketId;
-        self.market_state.market_position_mint = self.market_position_mint.key();
         self.market_state.total_liquidity = 0;
-        self.market_state.total_lp_tokens = 0;
+
         self.market_state.total_bets = 0;
         self.market_state.resolved = false;
         self.market_state.winner = 0;

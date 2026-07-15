@@ -32,16 +32,34 @@ export function lpMintPda(): PublicKey {
   return getPda(SEEDS.lpMint);
 }
 
-// Rust: [b"create_market", admin, market_id.to_le_bytes()] — question lives in MarketState only
+// Rust: [b"create_market", admin, market_id.to_be_bytes()] — question lives in MarketState only
 export function createMarketPda(admin: Keypair, marketId: number): PublicKey {
-  const marketIdLe = Buffer.alloc(2);
-  marketIdLe.writeUInt16LE(marketId);
+  const marketIdBe = Buffer.alloc(2);
+  marketIdBe.writeUInt16BE(marketId);
 
   return PublicKey.findProgramAddressSync(
     [
       Buffer.from("create_market"),
       admin.publicKey.toBuffer(),
-      marketIdLe,
+      marketIdBe,
+    ],
+    programId
+  )[0];
+}
+
+
+
+// Rust: [b"place_bet", bet_id.to_be_bytes(), user, market_state]
+export function userBetStatePda(user: Keypair, betId: number, marketState: PublicKey): PublicKey {
+  const betIdBe = Buffer.alloc(2);
+  betIdBe.writeUInt16BE(betId);
+
+  return PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("place_bet"),
+      betIdBe,
+      user.publicKey.toBuffer(),
+      marketState.toBuffer(),
     ],
     programId
   )[0];

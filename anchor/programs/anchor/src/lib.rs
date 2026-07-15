@@ -63,22 +63,10 @@ pub mod anchor {
     /// Places a prediction bet on a match outcome.
     /// User pays collateral (e.g. USDC) directly to the prediction market escrow.
 
-    pub fn place_bet(
-        ctx: Context<PlaceBet>,
-        entry_odds_scaled: u64,
-        bet_id: u16,
-        outcome: u8,
-        amount: u64,
-    ) -> Result<()> {
-        let market_position_mint_bump = ctx.bumps.market_position_mint;
-
-        ctx.accounts.handle_place_bet(
-            entry_odds_scaled,
-            bet_id,
-            outcome,
-            amount,
-            market_position_mint_bump,
-        )?;
+    pub fn place_bet(ctx: Context<PlaceBet>, bet_id: u16, outcome: u8, amount: u64) -> Result<()> {
+        let user_market_bet_state_bump = ctx.bumps.user_market_bet_state;
+        ctx.accounts
+            .handle_place_bet(bet_id, outcome, amount, user_market_bet_state_bump)?;
         Ok(())
     }
 

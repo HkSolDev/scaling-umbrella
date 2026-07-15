@@ -23,8 +23,14 @@ pub enum ErrorCode {
     AdminMismatch,
     #[msg("Invalid prediction mint")]
     InvalidPredictionMint,
-    #[msg("Invalid prediction LP mint")]
-    InvalidMarketPositionMint,
     #[msg("Invalid outcome")]
     InvalidOutcome,
+    #[msg("Amount must be positive")]
+    AmountMustBePositive,
+    #[msg("Market already resolved")]
+    MarketAlreadyResolved,
+    #[msg("User token balance is insufficient")]
+    InsufficientBalance,
+    #[msg("Market accounting does not match its token vault")]
+    AccountingMismatch,
 }

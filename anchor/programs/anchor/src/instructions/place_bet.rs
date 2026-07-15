@@ -1,15 +1,12 @@
 use crate::errors::ErrorCode;
 use crate::state::{MarketState, PositionState};
-use anchor_lang::accounts::signer;
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 
-use anchor_spl::token_interface::{
-    self, Mint, MintTo, TokenAccount, TokenInterface, TransferChecked,
-};
+use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
 
 #[derive(Accounts)]
-#[instruction(entry_odds_scaled: u64, bet_id: u16)]
+#[instruction(bet_id: u16)]
 pub struct PlaceBet<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -41,24 +38,6 @@ pub struct PlaceBet<'info> {
         constraint = prediction_token_vault.mint == prediction_mint.key() && prediction_token_vault.owner == market_state.key() @ ErrorCode::InvalidPredictionMint,)]
     pub prediction_token_vault: InterfaceAccount<'info, TokenAccount>,
 
-    /// PREDICTION TOKEN LP MINT
-    // use this mint for the LP token that will be used to represent shares in the market of the user
-    #[account(mut,
-        constraint = market_position_mint
-        .mint_authority == market_state.key().into() @ ErrorCode::InvalidMarketPositionMint,
-        seeds = [b"market_position_mint", market_state.key().as_ref()],
-        bump
-    )]
-    pub market_position_mint: InterfaceAccount<'info, Mint>,
-
-    #[account(init_if_needed,
-        payer = user,
-        associated_token::mint = market_position_mint
-,
-        associated_token::authority = user,
-        associated_token::token_program = token_program,
-    )]
-    pub user_market_position_token_account: InterfaceAccount<'info, TokenAccount>,
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -67,11 +46,10 @@ pub struct PlaceBet<'info> {
 impl<'info> PlaceBet<'info> {
     pub fn handle_place_bet(
         &mut self,
-        entry_odds_scaled: u64,
         bet_id: u16,
         outcome: u8,
         amount: u64,
-        market_position_mint_bump: u8,
+        user_market_bet_state_bump: u8,
     ) -> Result<()> {
         msg!(
             "place_bet: user={}, market_id={}, amount={}",
@@ -81,7 +59,12 @@ impl<'info> PlaceBet<'info> {
         );
         let user_balance = self.user_prediction_token_account.amount;
 
-        require_gt!(user_balance, amount);
+        require!(
+            !self.market_state.resolved,
+            ErrorCode::MarketAlreadyResolved
+        );
+        require_gt!(amount, 0, ErrorCode::AmountMustBePositive);
+        require!(user_balance >= amount, ErrorCode::InsufficientBalance);
         require!(outcome <= 2, ErrorCode::InvalidOutcome);
 
         let decimal = self.prediction_mint.decimals;
@@ -99,17 +82,14 @@ impl<'info> PlaceBet<'info> {
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         token_interface::transfer_checked(cpi_ctx, amount, decimal)?;
 
-        self.user_market_bet_state.entry_odds_scaled = entry_odds_scaled;
         self.user_market_bet_state.bet_id = bet_id;
+
         self.user_market_bet_state.user = *self.user.key;
         self.user_market_bet_state.match_id = self.market_state.market_id;
         self.user_market_bet_state.outcome = outcome;
         self.user_market_bet_state.amount = amount;
-        // TODO(security): derive odds from MarketState on-chain instead of trusting client input.
-        self.user_market_bet_state.entry_odds = entry_odds_scaled;
-        self.user_market_bet_state.is_settled = false;
-        // TODO: store the user_market_bet_state bump, not the market-position mint bump.
-        self.user_market_bet_state.bump = market_position_mint_bump;
+        self.user_market_bet_state.is_settled = self.market_state.resolved;
+        self.user_market_bet_state.bump = user_market_bet_state_bump;
 
         //Increase the total liquidity of the market by the amount of prediction tokens deposited
         self.market_state.total_liquidity = self
@@ -118,30 +98,30 @@ impl<'info> PlaceBet<'info> {
             .checked_add(amount)
             .ok_or(ErrorCode::MathOverflow)?;
 
-        // Mint LP tokenschecked(cpi_ctx, amount, decimalhe amount of prediction tokens they deposited
-        let market_state = &mut self.market_state;
-        let market_key = market_state.key();
-        let market_key_bytes = market_key.to_bytes();
-        let seeds = &[
-            b"market_position_mint",
-            market_key_bytes.as_ref(),
-            &[market_position_mint_bump],
-        ];
-        let cpi_accounts_mint = MintTo {
-            mint: self.market_position_mint.to_account_info(),
-            to: self.user_market_position_token_account.to_account_info(),
-            authority: self.market_state.to_account_info(),
-        };
-        let signer = &[&seeds[..]];
-        let cpi_ctx_mint = CpiContext::new_with_signer(token_program, cpi_accounts_mint, signer);
-        token_interface::mint_to(cpi_ctx_mint, amount)?;
-
-        // Increase the total LP tokens of the market by the amount of LP tokens mintedq
-        self.market_state.total_lp_tokens = self
-            .market_state
-            .total_lp_tokens
-            .checked_add(amount)
-            .ok_or(ErrorCode::MathOverflow)?;
+        match outcome {
+            0 => {
+                self.market_state.home_pool = self
+                    .market_state
+                    .home_pool
+                    .checked_add(amount)
+                    .ok_or(ErrorCode::MathOverflow)?;
+            }
+            1 => {
+                self.market_state.away_pool = self
+                    .market_state
+                    .away_pool
+                    .checked_add(amount)
+                    .ok_or(ErrorCode::MathOverflow)?;
+            }
+            2 => {
+                self.market_state.draw_pool = self
+                    .market_state
+                    .draw_pool
+                    .checked_add(amount)
+                    .ok_or(ErrorCode::MathOverflow)?;
+            }
+            _ => Err(ErrorCode::InvalidOutcome)?,
+        }
 
         self.market_state.total_bets = self
             .market_state
@@ -149,13 +129,29 @@ impl<'info> PlaceBet<'info> {
             .checked_add(1)
             .ok_or(ErrorCode::MathOverflow)?;
 
-        // TODO: reload prediction_token_vault after the transfer CPI before checking its balance.
-        self.market_state.reload()?;
+        self.prediction_token_vault.reload()?;
+
+        let selected_pool = match outcome {
+            0 => self.market_state.home_pool,
+            1 => self.market_state.away_pool,
+            2 => self.market_state.draw_pool,
+            _ => return Err(ErrorCode::InvalidOutcome.into()),
+        };
+        let share_bps = amount
+            .checked_mul(10_000)
+            .ok_or(ErrorCode::MathOverflow)?
+            .checked_div(selected_pool)
+            .ok_or(ErrorCode::MathUnderflow)?;
 
         let total_liquidity = self.market_state.total_liquidity;
         let market_vault_balance = self.prediction_token_vault.amount;
-        // TODO: replace assert_eq! with a typed on-chain accounting error.
-        assert_eq!(total_liquidity, market_vault_balance);
+        require_eq!(
+            total_liquidity,
+            market_vault_balance,
+            ErrorCode::AccountingMismatch
+        );
+
+        msg!("entry pool share bps: {}", share_bps);
 
         Ok(())
     }
