@@ -33,4 +33,7 @@ pub enum ErrorCode {
     InsufficientBalance,
     #[msg("Market accounting does not match its token vault")]
     AccountingMismatch,
+
+    #[msg("Market already settled")]
+    MarketAlreadySettled,
 }

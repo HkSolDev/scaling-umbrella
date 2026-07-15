@@ -72,15 +72,8 @@ pub mod anchor {
 
     /// Trustlessly settles a completed match prediction.
     /// In a production environment, this CPIs into the TxLINE validate_stat program.
-    pub fn settle_market(
-        ctx: Context<SettleMarket>,
-        winning_outcome: u8,
-        // TxLINE Merkle proof inputs would be passed here (or simulated)
-    ) -> Result<()> {
-        // TODO: Execute validation CPI (simulate or CPI into TxLINE's validate_stat program)
-        // TODO: Distribute payouts to winning traders
-        // TODO: Collect lost stakes and deposit a portion back to the LP Vault
-        msg!("Market settled. Winner outcome: {}", winning_outcome);
+    pub fn settle_market(ctx: Context<SettleMarket>, winning_outcome: u8) -> Result<()> {
+        ctx.accounts.handle_settle_market(winning_outcome)?;
         Ok(())
     }
 }
@@ -103,11 +96,4 @@ pub struct WithdrawLp<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     // TODO: Define accounts to process withdrawal and transfer back to LP
-}
-
-#[derive(Accounts)]
-pub struct SettleMarket<'info> {
-    #[account(mut)]
-    pub signer: Signer<'info>,
-    // TODO: Define accounts for VaultState, MarketState, and trader positions
 }
