@@ -1,4 +1,4 @@
-# TxLINE Prediction Market — Anchor Program
+# Prediction Market — Anchor Program
 
 Local development and testing use [Surfpool](https://docs.surfpool.run/) instead of `solana-test-validator` for faster startup and hot-reload.
 
@@ -10,7 +10,7 @@ The current MVP is a pool-based prediction market:
 - Users can place multiple bets on Home, Away, or Draw.
 - Each bet is stored in a unique `PositionState` PDA derived from `bet_id`, user, and market.
 - The market tracks `total_liquidity`, `home_pool`, `away_pool`, and `draw_pool`.
-- TxLINE oracle settlement, leveraged betting, market LP tokens, and withdrawals are not part of the current MVP.
+- Oracle settlement, leveraged betting, market LP tokens, and withdrawals are not part of the current MVP.
 
 When a bet is placed, tokens move into the market vault and the selected outcome pool increases. The live outcome percentage is calculated from the current pools:
 
